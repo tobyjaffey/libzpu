@@ -30,6 +30,8 @@
 //#define DEBUG_STACK 1
 //#define DEBUG_POP 1
 
+#define ZPU_INTERRUPT_VECTOR    0x00000020
+
 #define ZPU_OP_IM               0x80
 #define ZPU_OP_BREAKPOINT       0x00
 #define ZPU_OP_PUSHSP           0x02
@@ -60,6 +62,7 @@ void zpuvm_init(zpuvm_t *vm, uint32_t ram_len, void *userdata)
     vm->idim = 0;
     vm->ram_len = ram_len;
     vm->sp = ram_len;
+    vm->interrupt_status = 0;
     vm->error = false;
     vm->userdata = userdata;
 }
@@ -71,7 +74,14 @@ int32_t zpuvm_read32(zpuvm_t *vm, uint32_t addr)
 
     if (addr >= ZPU_IO_BASE)
     {
-        val = (int32_t)zpuvm_read_io32(vm, addr);
+        switch(addr)
+        {
+            case ZPU_IO_INTERRUPT_STATUS:
+                val = vm->interrupt_status;
+            break;
+            default:
+                val = (int32_t)zpuvm_read_io32(vm, addr);
+        }
     }
     else
     {
@@ -124,7 +134,15 @@ void zpuvm_write32(zpuvm_t *vm, uint32_t addr, int32_t val)
 
     if (addr >= ZPU_IO_BASE)
     {
-        zpuvm_write_io32(vm, addr, (uint32_t)val);
+        switch(addr)
+        {
+            case ZPU_IO_INTERRUPT_STATUS:
+                vm->interrupt_status = val;
+            break;
+
+            default:
+                zpuvm_write_io32(vm, addr, (uint32_t)val);
+        }
     }
     else
     {
@@ -188,6 +206,13 @@ void zpuvm_print_stack(zpuvm_t *vm)
         }
     }
     DBG(" ] (sp=0x%08X)\n", vm->sp);
+}
+
+void zpuvm_interrupt(zpuvm_t *vm, uint32_t mask)
+{
+    vm->interrupt_status |= mask;
+    zpuvm_push(vm, vm->pc);
+    vm->pc = ZPU_INTERRUPT_VECTOR;
 }
 
 int zpuvm_exec(zpuvm_t *vm)

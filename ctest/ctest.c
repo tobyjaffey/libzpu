@@ -20,31 +20,26 @@
 #include <stdlib.h>
 #include "io.h"
 
-volatile int *SYS_PUTC = (volatile int *)ZPU_IO_PUTC;
-volatile int *SYS_GETC = (volatile int *)ZPU_IO_GETC;
+#define WRITEREG(addr, val)     *((volatile int *)(addr)) = val
+#define READREG(addr)           *((volatile int *)(addr))
 
-static void cons_putc(char c)
+void _zpu_interrupt(void)
 {
-    *SYS_PUTC = c;
-}
-
-static int cons_getc(void)
-{
-    return *SYS_GETC;
+    printf("INT 0x%08X\n", READREG(ZPU_IO_INTERRUPT_STATUS));
 }
 
 int _DEFUN (write, (fd, buf, nbytes), int fd _AND char *buf _AND int nbytes)
 {
     int i;
     for (i = 0; i < nbytes; i++)
-        cons_putc(buf[i]);
+        WRITEREG(ZPU_IO_PUTC, buf[i]);
     return nbytes;
 }
 
 int _DEFUN (read, (fd, buf, nbytes), int fd _AND char *buf _AND int nbytes)
 {
     int c;
-    while (-1 == (c = cons_getc()));
+    while (-1 == (c = READREG(ZPU_IO_GETC)));
     buf[0] = c;
     return 1;
 }
