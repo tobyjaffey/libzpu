@@ -42,6 +42,8 @@ Caveats
 -------
 
 libzpu is not a cycle accurate simulation of the hardware
+
 libzpu does not implement every opcode
+
 libzpu does not emulate any peripherals
 
