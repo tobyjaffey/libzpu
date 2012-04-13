@@ -19,5 +19,9 @@
 uint8_t *file_read(const char *name, size_t *retlen);
 void dump(const uint8_t *data, size_t len);
 
+void terminal_reset(void);
+void terminal_init(void);
+bool getch_poll(char *ch);
+
 #endif
 

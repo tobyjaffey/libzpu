@@ -16,11 +16,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <ctype.h>
+#include <termios.h>
+#include <string.h>
+
+static struct termios orig_termios;
 
 uint8_t *file_read(const char *name, size_t *retlen)
 {
@@ -89,4 +94,36 @@ void dump(const uint8_t *data, size_t len)
         off += n;
     }
 }
+
+void terminal_reset(void)
+{
+    tcsetattr(0, TCSANOW, &orig_termios);
+}
+
+void terminal_init(void)
+{
+    struct termios new_termios;
+
+    tcgetattr(0, &orig_termios);
+    memcpy(&new_termios, &orig_termios, sizeof(new_termios));
+    tcsetattr(0, TCSANOW, &new_termios);
+}
+
+bool getch_poll(char *ch)
+{
+    struct timeval tv = { 0L, 0L };
+    fd_set fds;
+    FD_SET(0, &fds);
+    if (select(1, &fds, NULL, NULL, &tv))
+    {
+        if (1 == read(0, ch, 1))
+        {
+            if (*ch == 0x03)   // Ctrl-C
+                exit(0);
+            return true;
+        }
+    }
+    return false;
+}
+
 

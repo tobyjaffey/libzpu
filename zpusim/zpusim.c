@@ -40,18 +40,37 @@ void zpuvm_write(zpuvm_t *vm, uint32_t addr, uint8_t *buf, uint32_t len)
 
 void zpuvm_write_io32(zpuvm_t *vm, uint32_t addr, uint32_t val)
 {
-    if (addr == ZPU_IO_PUTC)
-        fprintf(stderr, "%c", val);
-    else
-        fprintf(stderr, "zpuvm_write_io32 addr=%08X val=%08X\n", addr, val);
+    switch(addr)
+    {
+        case ZPU_IO_PUTC:
+            printf("%c", val);
+            fflush(stdout);
+        break;
+        default:
+            fprintf(stderr, "zpuvm_write_io32 addr=%08X val=%08X\n", addr, val);
+        break;
+    }
 }
 
 uint32_t zpuvm_read_io32(zpuvm_t *vm, uint32_t addr)
 {
-    fprintf(stderr, "zpuvm_read_io32 addr=%08X\n", addr);
+    switch(addr)
+    {
+        case ZPU_IO_GETC:
+        {
+            char c;
+            if (getch_poll(&c))
+                return c;
+            return -1;
+        }
+        break;
+        default:
+            fprintf(stderr, "zpuvm_read_io32 addr=%08X\n", addr);
+        break;
+    }
+
     return 0x00000000;
 }
-
 
 int main(int argc, char *argv[])
 {
@@ -83,6 +102,9 @@ int main(int argc, char *argv[])
 
     zpuvm_init(&vm, sizeof(ram), (void *)ram);
 
+    atexit(terminal_reset);
+    terminal_init();
+
     while(1)
     {
         if (zpuvm_exec(&vm) < 0)
@@ -91,6 +113,8 @@ int main(int argc, char *argv[])
             break;
         }
     }
+
+    terminal_reset();
     return 0;
 }
 

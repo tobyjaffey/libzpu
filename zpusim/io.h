@@ -18,6 +18,7 @@
 
 #define ZPU_IO_BASE 0x80000000
 #define ZPU_IO_PUTC (ZPU_IO_BASE+0)
+#define ZPU_IO_GETC (ZPU_IO_BASE+4)
 
 #endif
 

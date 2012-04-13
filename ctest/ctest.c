@@ -20,10 +20,17 @@
 #include <stdlib.h>
 #include "io.h"
 
+volatile int *SYS_PUTC = (volatile int *)ZPU_IO_PUTC;
+volatile int *SYS_GETC = (volatile int *)ZPU_IO_GETC;
+
 static void cons_putc(char c)
 {
-    volatile int *SYS_PUTC = (volatile int *)ZPU_IO_PUTC;
     *SYS_PUTC = c;
+}
+
+static int cons_getc(void)
+{
+    return *SYS_GETC;
 }
 
 int _DEFUN (write, (fd, buf, nbytes), int fd _AND char *buf _AND int nbytes)
@@ -32,6 +39,14 @@ int _DEFUN (write, (fd, buf, nbytes), int fd _AND char *buf _AND int nbytes)
     for (i = 0; i < nbytes; i++)
         cons_putc(buf[i]);
     return nbytes;
+}
+
+int _DEFUN (read, (fd, buf, nbytes), int fd _AND char *buf _AND int nbytes)
+{
+    int c;
+    while (-1 == (c = cons_getc()));
+    buf[0] = c;
+    return 1;
 }
 
 int fibonacci(int n)
@@ -50,8 +65,13 @@ int fibonacci(int n)
 int main(void)
 {
     int i;
-    
-    printf("Hello world\n");
+    char s[256];
+
+    printf("Hello. What is your name? ");
+
+    fgets(s, sizeof(s), stdin);
+
+    printf("Hi %s\n", s);
 
     for (i=0;i<20;i++)
         printf("%d ", fibonacci(i));
