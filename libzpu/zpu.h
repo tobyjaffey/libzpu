@@ -19,18 +19,25 @@
 #include <stdint.h>
 
 #define ZPU_IO_BASE 0x80000000
-#define ZPU_IO_INTERRUPT_STATUS     (ZPU_IO_BASE+0)
 #define ZPU_IO_USER_BASE            (ZPU_IO_BASE + 0x00000100)
+
+#define ZPU_IO_INTERRUPT_STATUS     (ZPU_IO_BASE+0)
+#define ZPU_INTERRUPT_CONFIG        (ZPU_IO_BASE+4)
+#define ZPU_SYSCONTROL              (ZPU_IO_BASE+8)
 
 typedef struct
 {
     uint32_t pc;
     uint32_t sp;
     uint32_t ram_len;
-    uint32_t interrupt_status;
     bool idim;
     bool error;
     void *userdata;
+
+    uint32_t interrupt_status;
+    uint32_t interrupt_config;
+    uint32_t syscontrol;    // system control reg
+    uint8_t uart_in;        // uart input buffer
 } zpuvm_t;
 
 void zpuvm_init(zpuvm_t *vm, uint32_t ram_len, void *userdata);

@@ -23,37 +23,46 @@
 #define WRITEREG(addr, val)     *((volatile int *)(addr)) = val
 #define READREG(addr)           *((volatile int *)(addr))
 
+volatile uint8_t uart_in = 0;
+
 void _zpu_interrupt(void)
 {
-    printf("INT 0x%08X\n", READREG(ZPU_IO_INTERRUPT_STATUS));
+    uint32_t interrupt_status = READREG(ZPU_IO_INTERRUPT_STATUS);
+
+    if (interrupt_status & ZPU_INTERRUPT_CONFIG_UART)
+        uart_in = READREG(ZPU_IO_UART_DATA);
+}
+
+void sleep_on(uint32_t interrupt_mask)
+{
+    uint32_t old_config = READREG(ZPU_INTERRUPT_CONFIG);
+    WRITEREG(ZPU_INTERRUPT_CONFIG, interrupt_mask);
+    WRITEREG(ZPU_SYSCONTROL, ZPU_SYSCONTROL_SLEEP);
+    // we're now asleep, zzz...
+    WRITEREG(ZPU_INTERRUPT_CONFIG, old_config);
 }
 
 int _DEFUN (write, (fd, buf, nbytes), int fd _AND char *buf _AND int nbytes)
 {
     int i;
     for (i = 0; i < nbytes; i++)
-        WRITEREG(ZPU_IO_PUTC, buf[i]);
+        WRITEREG(ZPU_IO_UART_DATA, buf[i]);
     return nbytes;
 }
 
 int _DEFUN (read, (fd, buf, nbytes), int fd _AND char *buf _AND int nbytes)
 {
-    int c;
-    while (-1 == (c = READREG(ZPU_IO_GETC)));
-    buf[0] = c;
+    sleep_on(ZPU_INTERRUPT_CONFIG_UART);
+    buf[0] = uart_in;
     return 1;
 }
 
 int fibonacci(int n)
 {
     if (n == 0) 
-    {
         return 0;
-    } 
     if (n == 1)
-    {
         return 1;
-    }
     return fibonacci(n - 1) + fibonacci(n - 2);
 }
 

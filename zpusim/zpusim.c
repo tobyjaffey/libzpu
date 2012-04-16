@@ -42,7 +42,7 @@ void zpuvm_write_io32(zpuvm_t *vm, uint32_t addr, uint32_t val)
 {
     switch(addr)
     {
-        case ZPU_IO_PUTC:
+        case ZPU_IO_UART_DATA:
             printf("%c", val);
             fflush(stdout);
         break;
@@ -56,13 +56,8 @@ uint32_t zpuvm_read_io32(zpuvm_t *vm, uint32_t addr)
 {
     switch(addr)
     {
-        case ZPU_IO_GETC:
-        {
-            char c;
-            if (getch_poll(&c))
-                return c;
-            return -1;
-        }
+        case ZPU_IO_UART_DATA:
+            return vm->uart_in;
         break;
         default:
             fprintf(stderr, "zpuvm_read_io32 addr=%08X\n", addr);
@@ -78,6 +73,9 @@ int main(int argc, char *argv[])
     size_t image_len;
     zpuvm_t vm;
     uint8_t ram[RAM_SIZE];
+    fd_set rfds;
+    struct timeval tv;
+    int rc;
 
     if (argc < 2)
     {
@@ -107,10 +105,45 @@ int main(int argc, char *argv[])
 
     while(1)
     {
-        if (zpuvm_exec(&vm) < 0)
+        if (!(vm.syscontrol & ZPU_SYSCONTROL_SLEEP))
         {
-            fprintf(stderr, "\nStopped\n");
-            break;
+            if (zpuvm_exec(&vm) < 0)
+            {
+                fprintf(stderr, "\nStopped\n");
+                break;
+            }
+        }
+        else
+        {
+            FD_ZERO(&rfds);
+            FD_SET(0, &rfds);
+
+            tv.tv_sec = 1;
+            tv.tv_usec = 0;
+            rc = select(1, &rfds, NULL, NULL, &tv);
+            if (rc == -1)
+            {
+                fprintf(stderr, "Select error!\n");
+                break;
+            }
+            else
+            if (rc)
+            {
+                uint8_t c;
+                if (1 == read(0, &c, 1))
+                {
+                    vm.uart_in = c;
+                    if (vm.interrupt_config & ZPU_INTERRUPT_CONFIG_UART)
+                    {
+                        vm.syscontrol &= ~ZPU_SYSCONTROL_SLEEP;          // wake up
+                        zpuvm_interrupt(&vm, ZPU_INTERRUPT_CONFIG_UART); // tell vm why
+                    }
+                }
+            }
+            else
+            {
+                // timeout
+            }
         }
     }
 

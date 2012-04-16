@@ -17,12 +17,19 @@
 #define ZPUSIM_IO_H 1
 
 #define ZPU_IO_BASE 0x80000000
+
 #define ZPU_IO_INTERRUPT_STATUS     (ZPU_IO_BASE+0)
+
+#define ZPU_INTERRUPT_CONFIG        (ZPU_IO_BASE+4)
+#define ZPU_INTERRUPT_CONFIG_UART   0x80000000
+
+#define ZPU_SYSCONTROL              (ZPU_IO_BASE+8)
+#define ZPU_SYSCONTROL_SLEEP        0x80000000
+
 
 #define ZPU_IO_USER_BASE            (ZPU_IO_BASE + 0x00000100)
 
-#define ZPU_IO_PUTC                 (ZPU_IO_USER_BASE+0)
-#define ZPU_IO_GETC                 (ZPU_IO_USER_BASE+4)
+#define ZPU_IO_UART_DATA            (ZPU_IO_USER_BASE+0)
 
 #endif
 

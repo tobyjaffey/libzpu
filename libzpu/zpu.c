@@ -79,6 +79,12 @@ int32_t zpuvm_read32(zpuvm_t *vm, uint32_t addr)
             case ZPU_IO_INTERRUPT_STATUS:
                 val = vm->interrupt_status;
             break;
+            case ZPU_INTERRUPT_CONFIG:
+                val = vm->interrupt_config;
+            break;
+            case ZPU_SYSCONTROL:
+                val = vm->syscontrol;
+            break;
             default:
                 val = (int32_t)zpuvm_read_io32(vm, addr);
         }
@@ -139,7 +145,12 @@ void zpuvm_write32(zpuvm_t *vm, uint32_t addr, int32_t val)
             case ZPU_IO_INTERRUPT_STATUS:
                 vm->interrupt_status = val;
             break;
-
+            case ZPU_INTERRUPT_CONFIG:
+                vm->interrupt_config = val;
+            break;
+            case ZPU_SYSCONTROL:
+                vm->syscontrol = val;
+            break;
             default:
                 zpuvm_write_io32(vm, addr, (uint32_t)val);
         }
