@@ -61,9 +61,7 @@ int main(int argc, char *argv[])
 {
     zpuvm_t vm;
 
-    memset(ram, 0, sizeof(ram));
     memcpy(ram, image, sizeof(image));
-
     zpuvm_init(&vm, sizeof(ram), NULL);
 
     while(0 == zpuvm_exec(&vm))
