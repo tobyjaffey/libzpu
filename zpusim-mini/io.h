@@ -1,0 +1,35 @@
+/*
+* Copyright (c) 2012, Toby Jaffey <trj-zpu@hodgepig.org>
+*
+* Permission to use, copy, modify, and distribute this software for any
+* purpose with or without fee is hereby granted, provided that the above
+* copyright notice and this permission notice appear in all copies.
+*
+* THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+* WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+* MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+* ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+* WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+* ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+* OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+*/
+#ifndef ZPUSIM_IO_H
+#define ZPUSIM_IO_H 1
+
+#define ZPU_IO_BASE 0x80000000
+
+#define ZPU_IO_INTERRUPT_STATUS     (ZPU_IO_BASE+0)
+
+#define ZPU_INTERRUPT_CONFIG        (ZPU_IO_BASE+4)
+#define ZPU_INTERRUPT_CONFIG_UART   0x80000000
+
+#define ZPU_SYSCONTROL              (ZPU_IO_BASE+8)
+#define ZPU_SYSCONTROL_SLEEP        0x80000000
+
+
+#define ZPU_IO_USER_BASE            (ZPU_IO_BASE + 0x00000100)
+
+#define ZPU_IO_UART_DATA            (ZPU_IO_USER_BASE+0)
+
+#endif
+
