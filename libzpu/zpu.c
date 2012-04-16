@@ -68,6 +68,10 @@ static uint32_t insn_freq[256] = {0};
 #define ZPU_OP_ASHIFTLEFT       0x2B
 #define ZPU_OP_LSHIFTRIGHT      0x2A
 #define ZPU_OP_SUB              0x31
+#define ZPU_OP_LESSTHAN         0x24
+#define ZPU_OP_LESSTHANOREQ     0x25
+#define ZPU_OP_ULESSTHAN        0x26
+#define ZPU_OP_POPPCREL         0x39
 
 void zpuvm_init(zpuvm_t *vm, uint32_t ram_len, void *userdata)
 {
@@ -243,7 +247,7 @@ int zpuvm_exec(zpuvm_t *vm)
 {
     uint8_t opcode;
     int32_t newpc = 0xFFFFFFFF;
-    
+   
     if (vm->error)
         return -1;
 
@@ -491,6 +495,33 @@ int zpuvm_exec(zpuvm_t *vm)
                 b = zpuvm_pop(vm);
                 zpuvm_push(vm, b-a);
             }
+            break;
+            case ZPU_OP_LESSTHAN:
+            {
+                int32_t a, b;
+                a = zpuvm_pop(vm);
+                b = zpuvm_pop(vm);
+                zpuvm_push(vm, (a < b) ? 1 : 0);
+            }
+            break;
+            case ZPU_OP_LESSTHANOREQ:
+            {
+                int32_t a, b;
+                a = zpuvm_pop(vm);
+                b = zpuvm_pop(vm);
+                zpuvm_push(vm, a <= b ? 1 : 0);
+            }
+            break;
+            case ZPU_OP_ULESSTHAN:
+            {
+                uint32_t a, b;
+                a = zpuvm_pop(vm);
+                b = zpuvm_pop(vm);
+                zpuvm_push(vm, a < b ? 1 : 0);
+            }
+            break;
+            case ZPU_OP_POPPCREL:
+                newpc = zpuvm_pop(vm) + (vm->pc-1);
             break;
 #endif
             default:
