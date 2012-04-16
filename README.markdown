@@ -8,6 +8,23 @@ libzpu allows code compiled with zpu-elf-gcc to run inside a software virtual ma
 
 All access to main memory and IO memory is via user provided callbacks.
 
+
+Contents
+--------
+
+zpusim - A ZPU emulator, implementing custom UART and interrupt control
+
+zpusim-mini - A stripped down emulator, showing bare use of the library. Suitable for a microcontroller.
+
+helloworld - ZPU code to print "Hello world" through zpusim's peripherals
+
+ctest - Example of standard library use (printf, fgets, etc.)
+
+asmtest - Example of how to use assembler
+
+libzpu - ZPU emulator core
+
+
 GCC Toolchain
 --------------
 
