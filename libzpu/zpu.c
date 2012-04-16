@@ -29,6 +29,12 @@
 //#define DEBUG_OPCODES 1
 //#define DEBUG_STACK 1
 //#define DEBUG_POP 1
+//#define EMULATE_OPCODES 1
+//#define DEBUG_EMULATE_INSN_FREQ 1
+
+#ifdef DEBUG_EMULATE_INSN_FREQ
+static uint32_t insn_freq[256] = {0};
+#endif
 
 #define ZPU_INTERRUPT_VECTOR    0x00000020
 
@@ -55,6 +61,13 @@
 #define ZPU_OP_LOADSP_MASK      0xE0
 #define ZPU_OP_ADDSP_MASK       0xF0
 
+#define ZPU_OP_CALLPCREL        0x3F
+#define ZPU_OP_PUSHSPADD        0x3D
+#define ZPU_OP_NEQBRANCH        0x38
+#define ZPU_OP_EQ               0x2E
+#define ZPU_OP_ASHIFTLEFT       0x2B
+#define ZPU_OP_LSHIFTRIGHT      0x2A
+#define ZPU_OP_SUB              0x31
 
 void zpuvm_init(zpuvm_t *vm, uint32_t ram_len, void *userdata)
 {
@@ -306,6 +319,18 @@ int zpuvm_exec(zpuvm_t *vm)
 #ifdef DEBUG_OPCODES
                 DBG("BREAKPOINT\n");
 #endif
+#ifdef DEBUG_EMULATE_INSN_FREQ
+                {
+                    int i;
+                    for (i=0;i<256;i++)
+                    {
+                        if (insn_freq[i])
+                        {
+                            DBG("insn 0x%02X called %d times\n", i, insn_freq[i]);
+                        }
+                    }
+                }
+#endif
                 vm->error = true;
             break;
             case ZPU_OP_LOAD:
@@ -412,7 +437,62 @@ int zpuvm_exec(zpuvm_t *vm)
                 zpuvm_push(vm, b);
             }
             break;
-
+#ifndef EMULATE_OPCODES
+            case ZPU_OP_CALLPCREL:
+            {
+                int32_t addr;
+                addr = zpuvm_pop(vm);
+                zpuvm_push(vm, vm->pc);
+                newpc = (vm->pc-1) + addr;
+            }
+            break;
+            case ZPU_OP_PUSHSPADD:
+            {
+                int32_t a = vm->sp;
+                int32_t b = zpuvm_pop(vm) * 4;
+                zpuvm_push(vm, a+b);
+            }
+            break;
+            case ZPU_OP_NEQBRANCH:
+            {
+                int32_t compare;
+                int32_t target;
+                target = zpuvm_pop(vm) + (vm->pc-1);
+                compare = zpuvm_pop(vm);
+                if (compare != 0)
+                    newpc = target;
+                else
+                    newpc = vm->pc;
+            }
+            break;
+            case ZPU_OP_EQ:
+                zpuvm_push(vm, (zpuvm_pop(vm) == zpuvm_pop(vm)) ? 1 : 0);
+            break;
+            case ZPU_OP_ASHIFTLEFT:
+            {
+                uint32_t a, b;
+                a = zpuvm_pop(vm);
+                b = zpuvm_pop(vm);
+                zpuvm_push(vm, b << (a & 0x3F));
+            }
+            break;
+            case ZPU_OP_LSHIFTRIGHT:
+            {
+                uint32_t a, b;
+                a = zpuvm_pop(vm);
+                b = zpuvm_pop(vm);
+                zpuvm_push(vm, b >> (a & 0x3F));
+            }
+            break;
+            case ZPU_OP_SUB:
+            {
+                uint32_t a, b;
+                a = zpuvm_pop(vm);
+                b = zpuvm_pop(vm);
+                zpuvm_push(vm, b-a);
+            }
+            break;
+#endif
             default:
                 if ((opcode & ZPU_OP_STORESP_MASK) == ZPU_OP_STORESP)
                 {
@@ -454,6 +534,9 @@ int zpuvm_exec(zpuvm_t *vm)
                 {
 #ifdef DEBUG_OPCODES
                     DBG("EMULATE %d\n", opcode & ~ZPU_OP_EMULATE_MASK);
+#endif
+#ifdef DEBUG_EMULATE_INSN_FREQ
+                    insn_freq[opcode]++;
 #endif
                     zpuvm_push(vm, vm->pc);
                     newpc = (opcode & ~ZPU_OP_EMULATE_MASK) * 32;
