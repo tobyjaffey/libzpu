@@ -78,7 +78,10 @@ int main(void)
     printf("Hi %s\n", s);
 
     for (i=0;i<20;i++)
+    {
         printf("%d ", fibonacci(i));
+        fflush(stdout);
+    }
     printf("\n");
 
     return 0;
